@@ -1,11 +1,7 @@
 ## My Project
 
-TODO: Fill this README out!
+This project walks you through how you can deploy a ControleNet model with Stable Diffusion on SageMaker endpoint using Multi-Model approach and Single-model approach. 
 
-Be sure to:
-
-* Change the title in this README
-* Edit your repository description on GitHub
 
 ## Security
 
