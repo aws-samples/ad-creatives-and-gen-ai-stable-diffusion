@@ -1,0 +1,31 @@
+name: "mlsd"
+backend: "python"
+max_batch_size: 8
+
+input [
+  {
+    name: "input_payload"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+    
+  }  
+]
+
+output [
+  {
+    name: "output_image_s3_path"
+    data_type: TYPE_STRING	
+    dims: [ -1 ]
+  }
+]
+
+instance_group [
+  {
+    kind: KIND_GPU
+  }
+]
+
+parameters: {
+  key: "EXECUTION_ENV_PATH",
+  value: {string_value: "/tmp/conda/sd_env.tar.gz"}
+}
