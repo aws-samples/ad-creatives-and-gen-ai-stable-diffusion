@@ -34,7 +34,9 @@ To run this Streamlit App on AWS EC2 (I tested this on the Ubuntu Image)
 * Copy the external link and paste in a new browser tab
 
 ## Note
-When invoking a model for the first time, it will take some time to load that model from s3 into the endpoint memory before inference happens, subsequent inference on same model will be faster. Also take into consideration compute memory size when deploying a MME. Models are cached in memory for faster inference, however, if memory is full, model(s) would be uncached to make space for the new target model for inference. For more info read [Sagemaker MME](https://docs.aws.amazon.com/sagemaker/latest/dg/multi-model-endpoints.html)
+When invoking a model for the first time in MME, it will take some time to load that model from s3 into the endpoint memory before inference happens, subsequent inference on same model will be faster. Also take into consideration compute instance memory size when deploying a MME. Models are cached in memory for faster inference, however, if memory is full, model(s) would be uncached to make space for the new target model for inference. For more info read [Sagemaker MME](https://docs.aws.amazon.com/sagemaker/latest/dg/multi-model-endpoints.html). 
+As of 7/31/2023.
+I hosted this model successfully on an `ml.g5.4xlarge` instance. 
 
 ## Security
 
