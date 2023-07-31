@@ -13,7 +13,8 @@ st.set_page_config(layout="wide")
 logger = logging.getLogger('sagemaker')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
-
+BUCKET='ENTER NAME OF S3 BUCKET'
+ENDPOINT='ENTER NAME OF DEPLOYED MODEL ENDPOINT'
    
 if 'generated' not in st.session_state:
     st.session_state['generated'] = []
@@ -24,7 +25,7 @@ def query(request,params):
     inputs = dict(   
     input_payload=json.dumps(request),
     )
-    print(f"THIS IS THE PRE NUMB -- {st.session_state['generated']}")
+
     mode=params['controlnet']
     # if len(st.session_state['generated']) <1:
     #     # invoke the setup_conda model to create the shared conda environment
@@ -41,7 +42,7 @@ def query(request,params):
     }
 
     response = runtime_sm_client.invoke_endpoint(
-        EndpointName="mme-mdl-controlnet-2023-07-07-23-00-15",
+        EndpointName=ENDPOINT,
         ContentType="application/octet-stream",
         Body=json.dumps(payload),
         TargetModel="setup_conda.tar.gz",
@@ -57,7 +58,7 @@ def query(request,params):
     
     try:
         response = runtime_sm_client.invoke_endpoint(
-            EndpointName="mme-mdl-controlnet-2023-07-07-23-00-15",
+            EndpointName=ENDPOINT,
             ContentType="application/octet-stream",
             Body=json.dumps(payload),
             TargetModel=f"{mode}.tar.gz", # specify the target model to run inference on
@@ -66,20 +67,16 @@ def query(request,params):
     except:
         time.sleep(2)
         response = runtime_sm_client.invoke_endpoint(
-            EndpointName="mme-mdl-controlnet-2023-07-07-23-00-15",
+            EndpointName=ENDPOINT,
             ContentType="application/octet-stream",
             Body=json.dumps(payload),
             TargetModel=f"{mode}.tar.gz", # specify the target model to run inference on
             Accept="application/json"
         )
-    output = json.loads(response["Body"].read().decode("utf8"))["outputs"] 
-    st.session_state['generated'].append(1)
-    print(len(st.session_state['generated']))
-    print(f"THIS IS THE NUM -- {st.session_state['generated']}")
-    # !aws s3api get-object --bucket {bucket} --key {request['output']}/{output[0]["data"][0].split('/',4)[-1]} {mode}.png
-    # !aws s3api get-object --bucket {bucket} --key {request['output']}/{mode}_{output[0]["data"][0].split('/',4)[-1]} {mode}_{mode}.png
-    image=s3_client.get_object(Bucket='genai-collab-east', Key=f"{request['output']}/{output[0]['data'][0].split('/',4)[-1]}")["Body"].read()
-    tech=s3_client.get_object(Bucket='genai-collab-east', Key=f"{request['output']}/{mode}_{output[0]['data'][0].split('/',4)[-1]}")["Body"].read()
+    output = json.loads(response["Body"].read().decode("utf8"))["outputs"]   
+    
+    image=s3_client.get_object(Bucket=BUCKET, Key=f"{request['output']}/{output[0]['data'][0].split('/',4)[-1]}")["Body"].read()
+    tech=s3_client.get_object(Bucket=BUCKET, Key=f"{request['output']}/{mode}_{output[0]['data'][0].split('/',4)[-1]}")["Body"].read()
     return image, tech
                 
 def action_doc(params):
@@ -92,8 +89,7 @@ def action_doc(params):
             st.image(file)
                    
             
-    with col2:  
-        #submit_button = st.form_submit_button(label='Create')
+    with col2:        
         with st.expander("Sample Prompt"):
             st.write("Prompt: metal orange colored car, complete car, colour photo, outdoors in a pleasant landscape, realistic, high quality  \nNegative prompt: cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, blurry, bad anatomy, bad proportions" )
         input_question = st.text_input('**Please pass a prompt:**', '')
@@ -101,12 +97,12 @@ def action_doc(params):
         if st.button('Generate Image') and len(input_question) > 3 and file is not None:
        
             s3_client = boto3.client('s3')
-            s3_client.put_object(Body=file, Bucket='genai-collab-east', Key=file_name)            
+            s3_client.put_object(Body=file, Bucket=BUCKET, Key=file_name)            
             n_p="cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, blurry, bad anatomy, bad proportions"
             n_p=neg_prompt if neg_prompt else n_p
             request={"prompt":input_question,
              "negative_prompt":n_p,
-             "image_uri":f's3://genai-collab-east/{file_name}',
+             "image_uri":f's3://{BUCKET}/{file_name}',
              "scale": params['scale'],
              "steps":params['steps'],
              "low_threshold":params['low_thresh'],
@@ -134,15 +130,12 @@ def app_sidebar():
         low_thresh = st.slider('low_threshold', min_value=0., max_value=500., value=100., step=10.)
         high_thresh = st.slider("high_threshold", min_value=0., max_value=1000., value=200., step=10.)
         seed = st.slider('seed', min_value=0., max_value=1000., value=100., step=10.)
-        if st.button('Clear Context'):
-            pd.DataFrame([], columns=['timestamp', 'question', 'response']).to_csv(CHAT_FILENAME, index=False)
         params = {'scale':scale, 'steps':steps, 'low_thresh':low_thresh, 'high_thresh':high_thresh,'seed':seed, 'controlnet':controlnet}
         return params 
         
         
 def main():
     params=app_sidebar()
-    #endpoint=params['endpoint']
     action_doc(params)
 
 
