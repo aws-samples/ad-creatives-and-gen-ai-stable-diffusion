@@ -27,8 +27,8 @@ def query(request,params):
     )
 
     mode=params['controlnet']
-    # if len(st.session_state['generated']) <1:
-    #     # invoke the setup_conda model to create the shared conda environment
+
+    # invoke the setup_conda model to create the shared conda environment
       
     payload = {
         "inputs": [
